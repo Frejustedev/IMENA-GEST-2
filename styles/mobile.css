@@ -1,0 +1,168 @@
+/* CSS spécialisé pour optimisation mobile et tablettes médicales */
+
+/* Touch-friendly - Zones tactiles minimales */
+.touch-manipulation {
+  touch-action: manipulation;
+  min-height: 44px; /* iOS minimum touch target */
+  min-width: 44px;
+}
+
+/* Optimisations pour tablettes médicales */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Tablettes en mode portrait */
+  .tablet-portrait {
+    font-size: 1.1rem; /* Texte plus lisible */
+  }
+  
+  /* Boutons plus larges pour tablettes */
+  .tablet-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+  
+  /* Navigation adaptée tablette */
+  .tablet-nav {
+    width: 240px; /* Plus étroit que desktop */
+  }
+  
+  /* Formulaires optimisés tablette */
+  .tablet-form input,
+  .tablet-form select,
+  .tablet-form textarea {
+    padding: 0.75rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+}
+
+/* Optimisations spécifiques Android */
+@media screen and (-webkit-min-device-pixel-ratio: 1) {
+  .android-optimization {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* Mode paysage tablette */
+@media screen and (orientation: landscape) and (min-width: 768px) and (max-width: 1024px) {
+  .landscape-tablet {
+    /* Utilisation maximale de l'espace horizontal */
+    grid-template-columns: 200px 1fr;
+  }
+  
+  .landscape-content {
+    padding: 1rem;
+  }
+}
+
+/* Dark mode pour environnements hospitaliers */
+@media (prefers-color-scheme: dark) {
+  .medical-dark {
+    background-color: #1e293b;
+    color: #e2e8f0;
+  }
+  
+  .medical-dark .bg-white {
+    background-color: #334155;
+  }
+  
+  .medical-dark .text-slate-800 {
+    color: #e2e8f0;
+  }
+}
+
+/* Mode d'urgence visuel */
+.emergency-mode {
+  animation: emergency-pulse 2s infinite;
+  border: 2px solid #dc2626;
+}
+
+@keyframes emergency-pulse {
+  0%, 100% {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+}
+
+/* Accessibilité - Focus visible */
+.focus-visible:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Print styles pour rapports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-friendly {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+}
+
+/* Scrolling optimisé pour mobile */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Loading states optimisés */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 2s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Gestes tactiles avancés */
+.swipe-container {
+  touch-action: pan-x pan-y;
+  overflow: hidden;
+}
+
+/* High contrast pour accessibilité */
+@media (prefers-contrast: high) {
+  .high-contrast {
+    border: 2px solid;
+    background-color: white;
+    color: black;
+  }
+  
+  .high-contrast button {
+    border: 2px solid black;
+    background-color: white;
+    color: black;
+  }
+  
+  .high-contrast button:hover {
+    background-color: black;
+    color: white;
+  }
+}
+
+/* Réduction des animations pour accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .respect-motion-preference {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

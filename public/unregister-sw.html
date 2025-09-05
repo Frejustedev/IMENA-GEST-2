@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Désinstaller Service Worker</title>
+</head>
+<body>
+    <h1>Désinstallation du Service Worker</h1>
+    <p id="status">En cours...</p>
+    
+    <script>
+        async function unregisterAllServiceWorkers() {
+            const statusEl = document.getElementById('status');
+            
+            try {
+                // Récupérer tous les service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                
+                if (registrations.length === 0) {
+                    statusEl.textContent = 'Aucun Service Worker trouvé.';
+                    return;
+                }
+                
+                // Désinscrire tous les service workers
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker désinstallé:', registration.scope);
+                }
+                
+                // Vider tous les caches
+                const cacheNames = await caches.keys();
+                for (let cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    console.log('Cache supprimé:', cacheName);
+                }
+                
+                statusEl.textContent = 'Tous les Service Workers ont été désinstallés avec succès!';
+                statusEl.style.color = 'green';
+                
+                // Rediriger après 2 secondes
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                
+            } catch (error) {
+                statusEl.textContent = 'Erreur: ' + error.message;
+                statusEl.style.color = 'red';
+            }
+        }
+        
+        // Exécuter immédiatement
+        unregisterAllServiceWorkers();
+    </script>
+</body>
+</html>

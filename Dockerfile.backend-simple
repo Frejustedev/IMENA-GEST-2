@@ -1,0 +1,49 @@
+# Backend IMENA-GEST Simple - Image Docker ultra-légère
+FROM node:18-alpine
+
+# Métadonnées
+LABEL maintainer="IMENA-GEST Team"
+LABEL description="Backend simple et performant pour IMENA-GEST"
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Copier le fichier du backend
+COPY backend-simple.js .
+
+# Créer le package.json et installer les dépendances
+RUN npm init -y && \
+    npm install --production \
+    fastify@4.24.3 \
+    @fastify/cors@8.4.2 \
+    @fastify/formbody@7.4.0 \
+    @fastify/multipart@8.0.0 \
+    @fastify/static@6.12.0 \
+    sqlite3@5.1.6 \
+    sqlite@5.1.1 \
+    bcryptjs@2.4.3 \
+    jsonwebtoken@9.0.2 && \
+    npm cache clean --force
+
+# Créer le dossier pour la base de données avec les bonnes permissions
+RUN mkdir -p /data && chown -R node:node /data
+
+# Utiliser l'utilisateur non-root
+USER node
+
+# Variables d'environnement par défaut
+ENV PORT=3001
+ENV DB_PATH=/data/database.sqlite
+ENV NODE_ENV=production
+ENV JWT_SECRET=change-me-in-production
+ENV CORS_ORIGIN=*
+
+# Exposer le port
+EXPOSE 3001
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+# Commande de démarrage
+CMD ["node", "backend-simple.js"]

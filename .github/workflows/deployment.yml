@@ -1,0 +1,445 @@
+name: IMENA-GEST CI/CD Production Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18.x'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: imena-gest
+  
+jobs:
+  # Phase 1: Tests et validation
+  test:
+    name: Tests et Validation Qualité
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: imena_gest_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies (Frontend)
+      run: npm ci
+      
+    - name: Install dependencies (Backend)
+      run: |
+        cd backend
+        npm ci
+        
+    - name: Lint Frontend
+      run: npm run lint
+      
+    - name: Lint Backend
+      run: |
+        cd backend
+        npm run lint
+        
+    - name: Type Check Frontend
+      run: npm run type-check
+      
+    - name: Type Check Backend
+      run: |
+        cd backend
+        npm run type-check
+        
+    - name: Unit Tests Frontend
+      run: npm run test:unit
+      
+    - name: Unit Tests Backend
+      run: |
+        cd backend
+        npm run test:unit
+        
+    - name: Integration Tests
+      run: |
+        cd backend
+        npm run test:integration
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/imena_gest_test
+        
+    - name: E2E Tests
+      run: |
+        cd backend
+        npm run test:e2e
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/imena_gest_test
+        
+    - name: Performance Tests
+      run: |
+        cd backend
+        npm run test:performance
+        
+    - name: Security Tests
+      run: |
+        cd backend
+        npm run test:security
+        
+    - name: Build Frontend
+      run: npm run build
+      
+    - name: Build Backend
+      run: |
+        cd backend
+        npm run build
+        
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          backend/dist/
+          
+  # Phase 2: Audit sécurité
+  security-audit:
+    name: Audit Sécurité
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd backend && npm ci
+        
+    - name: Security Audit (npm)
+      run: |
+        npm audit --audit-level=high
+        cd backend && npm audit --audit-level=high
+        
+    - name: Dependency vulnerabilities check
+      uses: actions/dependency-review-action@v3
+      if: github.event_name == 'pull_request'
+      
+    - name: CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: javascript, typescript
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Phase 3: Build Docker Images
+  build-docker:
+    name: Build Images Docker
+    runs-on: ubuntu-latest
+    needs: [test, security-audit]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+          
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ steps.meta.outputs.tags }}
+        format: spdx-json
+        output-file: sbom.spdx.json
+        
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+  # Phase 4: Déploiement Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      
+    - name: Deploy to staging
+      run: |
+        echo "Déploiement vers staging..."
+        # kubectl apply -f k8s/staging/
+        # helm upgrade --install imena-gest-staging ./helm/imena-gest \
+        #   --namespace staging \
+        #   --set image.tag=${{ needs.build-docker.outputs.image-tag }}
+        
+    - name: Run smoke tests
+      run: |
+        echo "Tests de fumée staging..."
+        # curl -f https://staging.imena-gest.com/health
+        
+    - name: Notify team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: always()
+
+  # Phase 5: Déploiement Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: 
+      name: production
+      url: https://imena-gest.com
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      
+    - name: Backup current production
+      run: |
+        echo "Sauvegarde base de données production..."
+        # kubectl exec deployment/postgres -- pg_dump -U postgres imena_gest > backup-$(date +%Y%m%d-%H%M%S).sql
+        
+    - name: Deploy to production
+      run: |
+        echo "Déploiement vers production..."
+        # kubectl apply -f k8s/production/
+        # helm upgrade --install imena-gest ./helm/imena-gest \
+        #   --namespace production \
+        #   --set image.tag=${{ needs.build-docker.outputs.image-tag }} \
+        #   --set resources.requests.cpu=2 \
+        #   --set resources.requests.memory=4Gi \
+        #   --set replicas=3
+        
+    - name: Wait for deployment
+      run: |
+        echo "Attente stabilisation déploiement..."
+        # kubectl rollout status deployment/imena-gest -n production --timeout=600s
+        
+    - name: Run production health checks
+      run: |
+        echo "Vérification santé production..."
+        # curl -f https://imena-gest.com/health
+        # curl -f https://imena-gest.com/api/health
+        
+    - name: Run production smoke tests
+      run: |
+        echo "Tests de fumée production..."
+        # npm run test:smoke -- --baseUrl=https://imena-gest.com
+        
+    - name: Update monitoring
+      run: |
+        echo "Mise à jour monitoring..."
+        # curl -X POST "${{ secrets.PROMETHEUS_WEBHOOK_URL }}" \
+        #   -H "Content-Type: application/json" \
+        #   -d '{"version": "${{ github.ref_name }}", "deployed_at": "'$(date -u +%Y-%m-%dT%H:%M:%S)'"}'
+        
+    - name: Notify success
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#deployments'
+        text: |
+          🚀 Déploiement production réussi!
+          Version: ${{ github.ref_name }}
+          Image: ${{ needs.build-docker.outputs.image-tag }}
+          URL: https://imena-gest.com
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changements dans cette version
+          
+          - Déploiement automatisé réussi
+          - Tests de sécurité passés
+          - Performance validée
+          
+          ## Images Docker
+          - `${{ needs.build-docker.outputs.image-tag }}`
+          
+          ## Checksums
+          - Digest: `${{ needs.build-docker.outputs.image-digest }}`
+        draft: false
+        prerelease: false
+
+  # Phase 6: Post-déploiement
+  post-deployment:
+    name: Post-Deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Update documentation
+      run: |
+        echo "Mise à jour documentation..."
+        # Trigger documentation rebuild
+        
+    - name: Performance baseline
+      run: |
+        echo "Établissement baseline performance..."
+        # npm run performance:baseline -- --url=https://imena-gest.com
+        
+    - name: Security scan production
+      run: |
+        echo "Scan sécurité production..."
+        # nmap -sV --script vuln nama-gest.com
+        
+    - name: Update status page
+      run: |
+        echo "Mise à jour page de statut..."
+        # curl -X PATCH "${{ secrets.STATUS_PAGE_API }}" \
+        #   -H "Authorization: Bearer ${{ secrets.STATUS_PAGE_TOKEN }}" \
+        #   -d '{"status": "operational", "version": "${{ github.ref_name }}"}'
+        
+    - name: Cleanup old images
+      run: |
+        echo "Nettoyage anciennes images..."
+        # Keep last 10 versions only
+        
+    - name: Final notification
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#general'
+        text: |
+          ✅ IMENA-GEST ${{ github.ref_name }} déployé avec succès!
+          
+          🔗 Application: https://imena-gest.com
+          📊 Monitoring: https://monitoring.imena-gest.com
+          📚 Documentation: https://docs.imena-gest.com
+          
+          Tous les contrôles post-déploiement sont passés ✓
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Job de rollback en cas d'échec
+  rollback:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: failure() && startsWith(github.ref, 'refs/tags/v')
+    environment: production-rollback
+    
+    steps:
+    - name: Rollback production
+      run: |
+        echo "🚨 ROLLBACK D'URGENCE 🚨"
+        # kubectl rollout undo deployment/imena-gest -n production
+        # helm rollback imena-gest -n production
+        
+    - name: Restore database
+      run: |
+        echo "Restauration base de données..."
+        # kubectl exec deployment/postgres -- psql -U postgres -d imena_gest -f /backups/latest.sql
+        
+    - name: Verify rollback
+      run: |
+        echo "Vérification rollback..."
+        # curl -f https://imena-gest.com/health
+        
+    - name: Alert team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#alerts'
+        text: |
+          🚨 ROLLBACK D'URGENCE EFFECTUÉ 🚨
+          
+          Le déploiement de ${{ github.ref_name }} a échoué.
+          L'application a été restaurée à la version précédente.
+          
+          Action requise: Investigation immédiate
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}

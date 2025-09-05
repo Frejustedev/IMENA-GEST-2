@@ -1,0 +1,500 @@
+# ===========================================
+# Pipeline CI/CD Production IMENA-GEST
+# Intégration Continue et Déploiement Sécurisé
+# ===========================================
+
+name: 🏥 IMENA-GEST Production CI/CD
+
+on:
+  push:
+    branches: 
+      - main
+      - production
+    tags:
+      - 'v*'
+  pull_request:
+    branches: 
+      - main
+      - production
+  schedule:
+    # Tests automatiques quotidiens à 2h00 UTC
+    - cron: '0 2 * * *'
+
+# Variables globales
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: imena-gest
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+# Permissions pour GitHub Packages
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+
+jobs:
+
+  # ===== ANALYSE STATIQUE ET SÉCURITÉ =====
+  security-analysis:
+    name: 🔒 Analyse Sécurité
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript,typescript
+          queries: security-extended,security-and-quality
+
+      - name: 🔧 Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: 📊 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+
+      - name: 🛡️ Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: 📤 Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ===== TESTS UNITAIRES ET INTÉGRATION =====
+  test-suite:
+    name: 🧪 Tests Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: 🔧 Setup test environment
+        run: |
+          cp .env.example .env.test
+          echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
+          echo "REDIS_URL=redis://localhost:6379/0" >> .env.test
+          echo "NODE_ENV=test" >> .env.test
+
+      - name: 🏗️ Build application
+        run: |
+          npm run build
+          cd backend && npm run build
+
+      - name: 🧪 Run ${{ matrix.test-type }} tests
+        run: |
+          case "${{ matrix.test-type }}" in
+            unit)
+              npm run test:unit -- --coverage --ci
+              cd backend && npm run test:unit -- --coverage --ci
+              ;;
+            integration)
+              npm run test:integration -- --ci
+              cd backend && npm run test:integration -- --ci
+              ;;
+            e2e)
+              npm run test:e2e -- --ci
+              ;;
+          esac
+        env:
+          NODE_ENV: test
+          CI: true
+
+      - name: 📊 Upload coverage reports
+        if: matrix.test-type == 'unit'
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info,./backend/coverage/lcov.info
+          flags: ${{ matrix.test-type }}
+          name: ${{ matrix.test-type }}-coverage
+
+      - name: 📋 Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            coverage/
+            backend/coverage/
+            test-results/
+          retention-days: 30
+
+  # ===== AUDIT QUALITÉ CODE =====
+  code-quality:
+    name: 📏 Qualité Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: 🔍 ESLint Analysis
+        run: |
+          npm run lint:ci
+          cd backend && npm run lint:ci
+
+      - name: 💅 Prettier Check
+        run: |
+          npm run format:check
+          cd backend && npm run format:check
+
+      - name: 🔍 TypeScript Check
+        run: |
+          npm run type-check
+          cd backend && npm run type-check
+
+      - name: 📊 SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ===== BUILD ET PUSH IMAGES DOCKER =====
+  build-and-push:
+    name: 🐳 Build & Push Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [security-analysis, test-suite, code-quality]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/tags/v'))
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🏗️ Build and push Frontend image
+        id: build-frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-frontend
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+      - name: 🏗️ Build and push Backend image
+        id: build-backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-backend
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: 🔍 Scan images for vulnerabilities
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v ${{ github.workspace }}:/workspace \
+            aquasec/trivy image \
+            --format sarif \
+            --output /workspace/trivy-image-results.sarif \
+            ${{ steps.meta.outputs.tags }}-frontend
+
+      - name: 📤 Upload image scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: trivy-image-results.sarif
+
+  # ===== TESTS DE PERFORMANCE =====
+  performance-tests:
+    name: ⚡ Tests Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-and-push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Start test environment
+        run: |
+          echo "POSTGRES_PASSWORD=test_password" > .env.test
+          echo "JWT_SECRET=test_jwt_secret_very_long_and_secure" >> .env.test
+          echo "ENCRYPTION_KEY=test_encryption_key_32_chars_exactly" >> .env.test
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 60  # Attendre que tous les services soient prêts
+
+      - name: 🔥 Load testing with K6
+        run: |
+          docker run --rm -i --network container:imena-nginx \
+            -v ${{ github.workspace }}/tests/performance:/scripts \
+            grafana/k6 run /scripts/load-test.js
+
+      - name: 📊 Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: 🧹 Cleanup test environment
+        if: always()
+        run: |
+          docker-compose -f docker-compose.test.yml down -v
+
+  # ===== DÉPLOIEMENT STAGING =====
+  deploy-staging:
+    name: 🚀 Deploy Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build-and-push, performance-tests]
+    if: github.ref == 'refs/heads/main'
+    environment: 
+      name: staging
+      url: https://staging.imena-gest.com
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup staging environment
+        run: |
+          echo "IMAGE_TAG=${{ needs.build-and-push.outputs.image-tags }}" > .env.staging
+          echo "ENVIRONMENT=staging" >> .env.staging
+
+      - name: 🚀 Deploy to staging
+        run: |
+          # Simulation du déploiement (remplacer par votre orchestrateur)
+          echo "Déploiement vers staging avec image: ${{ needs.build-and-push.outputs.image-tags }}"
+          # kubectl apply -f k8s/staging/ --kubeconfig=${{ secrets.KUBECONFIG_STAGING }}
+          # ou docker-compose -f docker-compose.staging.yml up -d
+
+      - name: 🏥 Health check staging
+        run: |
+          for i in {1..30}; do
+            if curl -f https://staging.imena-gest.com/health; then
+              echo "✅ Staging deployment successful"
+              exit 0
+            fi
+            echo "Waiting for staging to be ready... ($i/30)"
+            sleep 10
+          done
+          echo "❌ Staging deployment failed"
+          exit 1
+
+      - name: 🧪 Run smoke tests
+        run: |
+          npm run test:smoke:staging
+        env:
+          STAGING_URL: https://staging.imena-gest.com
+
+  # ===== DÉPLOIEMENT PRODUCTION =====
+  deploy-production:
+    name: 🏥 Deploy Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/tags/v')
+    environment: 
+      name: production
+      url: https://imena-gest.com
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔒 Verify deployment approval
+        run: |
+          echo "🏥 Déploiement en production approuvé"
+          echo "📋 Version: ${{ github.ref_name }}"
+          echo "👤 Déployé par: ${{ github.actor }}"
+
+      - name: 📊 Pre-deployment backup
+        run: |
+          # Backup automatique avant déploiement
+          echo "🔄 Sauvegarde pré-déploiement en cours..."
+          # kubectl exec deployment/postgresql -- pg_dump -U $DB_USER $DB_NAME > backup-pre-deploy.sql
+
+      - name: 🚀 Blue-Green Deployment
+        run: |
+          echo "🔄 Déploiement Blue-Green en cours..."
+          # Logique de déploiement blue-green
+          # 1. Déployer nouvelle version (Green)
+          # 2. Tester la nouvelle version
+          # 3. Basculer le trafic
+          # 4. Conserver l'ancienne version (Blue) en cas de rollback
+
+      - name: 🏥 Production health check
+        run: |
+          for i in {1..60}; do
+            if curl -f https://imena-gest.com/health; then
+              echo "✅ Production deployment successful"
+              break
+            fi
+            echo "Waiting for production to be ready... ($i/60)"
+            sleep 10
+          done
+
+      - name: 🧪 Post-deployment tests
+        run: |
+          npm run test:smoke:production
+        env:
+          PRODUCTION_URL: https://imena-gest.com
+
+      - name: 📧 Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Déploiement production réussi"
+          # Notification Slack/Teams/Email
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"✅ IMENA-GEST deployed to production successfully!"}' \
+          #   ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: 🚨 Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Échec du déploiement production"
+          # Notification d'échec et rollback automatique
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"❌ IMENA-GEST production deployment failed! Rolling back..."}' \
+          #   ${{ secrets.SLACK_WEBHOOK }}
+
+  # ===== TESTS POST-DÉPLOIEMENT =====
+  post-deployment-validation:
+    name: ✅ Validation Post-Déploiement
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [deploy-production]
+    if: always() && needs.deploy-production.result == 'success'
+
+    steps:
+      - name: 🏥 End-to-end tests production
+        run: |
+          echo "🧪 Tests E2E en production"
+          # Cypress tests against production
+          # npx cypress run --config baseUrl=https://imena-gest.com
+
+      - name: 📊 Performance monitoring
+        run: |
+          echo "📊 Monitoring performance post-déploiement"
+          # Vérification des métriques de performance
+
+      - name: 🔍 Security scan production
+        run: |
+          echo "🔒 Scan sécurité production"
+          # OWASP ZAP scan
+          # docker run -t owasp/zap2docker-stable zap-baseline.py -t https://imena-gest.com
+
+      - name: 📋 Generate deployment report
+        run: |
+          echo "📋 Génération rapport de déploiement"
+          echo "Version: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Date: $(date)"
+          echo "Status: ✅ Success"

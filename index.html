@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0284c7">
+  <meta name="description" content="IMENA-GEST - Application de gestion du parcours patient en médecine nucléaire">
+  <title>IMENA-GEST - Médecine Nucléaire</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <!-- Préchargement et optimisations -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- SEO -->
+  <meta property="og:title" content="IMENA-GEST">
+  <meta property="og:description" content="Gestion du parcours patient en médecine nucléaire">
+  <meta property="og:type" content="website">
+  <meta name="robots" content="noindex, nofollow">
+  
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  
+  <script>
+    // Désactiver Service Worker en développement
+    if ('serviceWorker' in navigator && window.location.hostname === 'localhost') {
+      // Désinstaller tous les Service Workers existants
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+          console.log('[SW] Désinstallé:', registration.scope);
+        }
+      });
+      
+      // Vider tous les caches
+      caches.keys().then(function(names) {
+        for (let name of names) {
+          caches.delete(name);
+          console.log('[Cache] Supprimé:', name);
+        }
+      });
+    }
+    
+    // Détection mode offline
+    window.addEventListener('online', () => {
+      document.body.classList.remove('offline');
+    });
+    window.addEventListener('offline', () => {
+      document.body.classList.add('offline');
+    });
+  </script>
+  <style>
+    /* Custom scrollbar for webkit browsers */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    body {
+      font-family: 'Inter', sans-serif; /* Ensures Inter is used */
+    }
+
+    /* Print-specific styles */
+    @media print {
+      body {
+        background-color: white !important;
+        font-size: 10pt;
+      }
+      .no-print {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      .printable-content {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+      a[href]:after {
+        content: none !important;
+      }
+      .print-break-before {
+        page-break-before: always;
+      }
+      .printable-form-field {
+        border: none !important;
+        background-color: transparent !important;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding: 1px;
+        box-shadow: none !important;
+        outline: none !important;
+        width: 100%;
+        color: black;
+      }
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "recharts": "https://esm.sh/recharts@^2.12.7"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/styles/accessibility.css">
+  <link rel="stylesheet" href="/styles/design-system.css">
+  <link rel="stylesheet" href="/styles/mobile.css">
+  <link rel="stylesheet" href="/styles/animations.css">
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+  
+  <!-- Fallback pour JS désactivé -->
+  <noscript>
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 9999;">
+      <div style="text-align: center; font-family: sans-serif; padding: 20px;">
+        <h1 style="color: #0284c7; margin-bottom: 20px;">JavaScript requis</h1>
+        <p style="color: #666; margin-bottom: 10px;">IMENA-GEST nécessite JavaScript pour fonctionner.</p>
+        <p style="color: #666;">Veuillez activer JavaScript dans votre navigateur.</p>
+      </div>
+    </div>
+  </noscript>
+  
+  <!-- Indicateur mode offline -->
+  <div id="offline-indicator" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; text-align: center; padding: 8px; z-index: 9998;">
+    Mode hors ligne - Certaines fonctionnalités peuvent être limitées
+  </div>
+  
+  <script>
+    // Afficher/masquer l'indicateur offline
+    function updateOfflineIndicator() {
+      const indicator = document.getElementById('offline-indicator');
+      if (indicator) {
+        indicator.style.display = navigator.onLine ? 'none' : 'block';
+      }
+    }
+    updateOfflineIndicator();
+    window.addEventListener('online', updateOfflineIndicator);
+    window.addEventListener('offline', updateOfflineIndicator);
+  </script>
+</body>
+</html>

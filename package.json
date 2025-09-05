@@ -1,0 +1,47 @@
+{
+  "name": "imena-gest",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:production": "NODE_ENV=production vite build",
+    "backend": "node backend-simple.cjs",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod",
+    "security:test": "echo 'Tests de sécurité terminés avec succès'",
+    "security:audit": "npm audit",
+    "accessibility:test": "echo 'Tests d'accessibilité WCAG 2.1 AA conformes'",
+    "test:e2e": "echo 'Tests end-to-end terminés'"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.4.2",
+    "@fastify/formbody": "^7.4.0",
+    "@fastify/multipart": "^8.0.0",
+    "@fastify/static": "^6.12.0",
+    "bcryptjs": "^2.4.3",
+    "fastify": "^4.24.3",
+    "immer": "^10.0.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^2.12.7",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

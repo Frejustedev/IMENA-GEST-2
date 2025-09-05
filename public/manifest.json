@@ -1,0 +1,23 @@
+{
+  "name": "IMENA-GEST - Gestion de Médecine Nucléaire",
+  "short_name": "IMENA-GEST",
+  "description": "Application de gestion du parcours patient en médecine nucléaire",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0284c7",
+  "theme_color": "#0284c7",
+  "orientation": "any",
+  "categories": ["medical", "productivity"],
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
