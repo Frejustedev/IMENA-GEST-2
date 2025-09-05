@@ -94,3 +94,11 @@ tmp/
 # Backup files
 *.backup
 *.bak
+
+# Large files (>100MB)
+*.exe
+*.msi
+*.dmg
+*.pkg
+postgresql-installer.exe
+database.sqlite
