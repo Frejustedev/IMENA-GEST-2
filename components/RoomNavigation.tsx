@@ -176,11 +176,11 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
       <aside 
         className={`
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 fixed lg:relative inset-y-0 left-0 z-50 
+          lg:translate-x-0 fixed lg:relative top-0 lg:top-0 left-0 z-40 
           ${isCollapsed ? 'w-16' : 'w-72'} 
           bg-slate-700 text-slate-200 overflow-y-auto 
           transition-all duration-300 ease-in-out no-print
-          flex flex-col
+          flex flex-col h-screen lg:h-full pt-16 lg:pt-0
         `}
       >
         {/* Header avec toggle collapse */}

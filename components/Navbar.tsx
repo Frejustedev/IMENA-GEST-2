@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className={`
       ${emergencyMode ? 'bg-red-600' : 'bg-slate-800'} 
       text-white shadow-md transition-colors duration-300 no-print
-      sticky top-0 z-50
+      sticky top-0 z-[60]
     `}>
       {/* Barre d'urgence */}
       {emergencyMode && (
