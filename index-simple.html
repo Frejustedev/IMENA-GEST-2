@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMENA-GEST - Gestion Médicale Nucléaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center">
+    <div class="card rounded-xl p-8 w-full max-w-md shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">IMENA-GEST</h1>
+            <p class="text-blue-100">Système de Gestion Médicale Nucléaire</p>
+        </div>
+        
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label class="block text-white text-sm font-medium mb-2">Email</label>
+                <input 
+                    type="email" 
+                    id="email"
+                    value="admin@imena-gest.com"
+                    class="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Votre email"
+                >
+            </div>
+            
+            <div>
+                <label class="block text-white text-sm font-medium mb-2">Mot de passe</label>
+                <input 
+                    type="password" 
+                    id="password"
+                    value="ImenaGest2024!"
+                    class="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Votre mot de passe"
+                >
+            </div>
+            
+            <button 
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105"
+            >
+                Se connecter
+            </button>
+        </form>
+        
+        <div id="status" class="mt-4 text-center text-white/80"></div>
+        
+        <div id="dashboard" class="hidden mt-8">
+            <h2 class="text-xl font-bold text-white mb-4">Tableau de Bord</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-white">24</div>
+                    <div class="text-white/80 text-sm">Patients</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-white">8</div>
+                    <div class="text-white/80 text-sm">Salles</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-white">12</div>
+                    <div class="text-white/80 text-sm">Examens</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-white">95%</div>
+                    <div class="text-white/80 text-sm">Uptime</div>
+                </div>
+            </div>
+            
+            <div class="mt-6 space-y-2">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition">
+                    Gestion des Patients
+                </button>
+                <button class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition">
+                    Hot Lab
+                </button>
+                <button class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg transition">
+                    Patrimoine
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://web-production-fa225.up.railway.app/api/v1';
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('status');
+            
+            status.textContent = 'Connexion en cours...';
+            status.className = 'mt-4 text-center text-yellow-300';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    status.textContent = 'Connexion réussie !';
+                    status.className = 'mt-4 text-center text-green-300';
+                    
+                    // Masquer le formulaire et afficher le dashboard
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    
+                    // Stocker le token
+                    localStorage.setItem('imena_access_token', data.data.accessToken);
+                } else {
+                    status.textContent = data.message || 'Erreur de connexion';
+                    status.className = 'mt-4 text-center text-red-300';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                status.textContent = 'Erreur de connexion au serveur';
+                status.className = 'mt-4 text-center text-red-300';
+            }
+        });
+        
+        // Test de connexion au backend au chargement
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL.replace('/api/v1', '')}/health`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Backend connecté:', data.message);
+                } else {
+                    console.warn('⚠️ Backend non disponible');
+                }
+            } catch (error) {
+                console.error('❌ Erreur backend:', error);
+            }
+        });
+    </script>
+</body>
+</html>

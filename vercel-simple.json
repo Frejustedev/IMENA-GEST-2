@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "imena-gest-simple",
+  "builds": [
+    {
+      "src": "index-simple.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index-simple.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "https://web-production-fa225.up.railway.app/api/v1"
+  }
+}
