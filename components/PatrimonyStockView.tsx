@@ -35,8 +35,8 @@ export const PatrimonyStockView: React.FC<PatrimonyStockViewProps> = ({
 
     const filteredItems = useMemo(() => {
         return stockItems.filter(item => 
-            item.designation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.designation || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.budgetLine && item.budgetLine.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [stockItems, searchTerm]);
@@ -96,11 +96,11 @@ export const PatrimonyStockView: React.FC<PatrimonyStockViewProps> = ({
                         <tbody className="bg-white divide-y divide-slate-100">
                             {paginatedItems.map(item => (
                                 <tr key={item.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{item.designation}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{item.designation || 'N/A'}</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{item.budgetLine || 'N/A'}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-slate-700">{item.currentStock}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{item.unit}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{item.unitPrice.toFixed(2)} €</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-slate-700">{item.currentStock || 0}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{item.unit || 'N/A'}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{(item.unitPrice || 0).toFixed(2)} €</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm space-x-2">
                                         <button onClick={() => onViewItemDetail(item)} className="p-1 text-sky-600 hover:text-sky-800" title="Voir la fiche de stock">
                                             <DocumentTextIcon className="h-5 w-5" />
