@@ -3,6 +3,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { useApp } from './src/hooks/useApp';
 import { usePatients } from './src/hooks/usePatients';
 import { useHotLab } from './src/hooks/useHotLab';
+import { apiService } from './src/services/apiService';
 import { useAuth } from './src/contexts/AuthContext';
 
 // Import des composants de base
@@ -203,11 +204,7 @@ function App() {
           
           // Charger les assets depuis l'API
           try {
-            const assetsResponse = await fetch('http://localhost:3001/api/v1/assets', {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-              }
-            });
+            const assetsResponse = await apiService.get('/assets');
             if (assetsResponse.ok) {
               const assetsData = await assetsResponse.json();
               if (assetsData.success) {
@@ -222,11 +219,7 @@ function App() {
           
           // Charger les articles de stock depuis l'API
           try {
-            const stockResponse = await fetch('http://localhost:3001/api/v1/stock', {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-              }
-            });
+            const stockResponse = await apiService.get('/stock');
             if (stockResponse.ok) {
               const stockData = await stockResponse.json();
               if (stockData.success) {
@@ -337,12 +330,7 @@ function App() {
 
   const handleDeletePatient = async (patient: any) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/v1/patients/${patient.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-        }
-      });
+      const response = await apiService.delete(`/patients/${patient.id}`);
 
       if (response.ok) {
         const data = await response.json();

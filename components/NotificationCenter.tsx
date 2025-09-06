@@ -4,6 +4,7 @@ import { XMarkIcon } from './icons/XMarkIcon';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { InformationCircleIcon } from './icons/InformationCircleIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { apiService } from '../src/services/apiService';
 
 interface Notification {
   id: string;
@@ -28,11 +29,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ emergenc
   const loadNotifications = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:3001/api/v1/notifications?limit=20', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-        }
-      });
+      const response = await apiService.get('/notifications?limit=20');
 
       if (response.ok) {
         const data = await response.json();
@@ -67,18 +64,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ emergenc
       // Créer notification exemple toutes les 30 secondes
       if (Math.random() > 0.8) {
         try {
-          await fetch('http://localhost:3001/api/v1/notifications', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-            },
-            body: JSON.stringify({
-              type: Math.random() > 0.7 ? 'warning' : 'info',
-              title: 'Activité Système',
-              message: 'Nouveau patient en attente en salle ' + ['Demande', 'RDV', 'Consultation'][Math.floor(Math.random() * 3)],
-              urgent: emergencyMode
-            })
+          await apiService.post('/notifications', {
+            type: Math.random() > 0.7 ? 'warning' : 'info',
+            title: 'Activité Système',
+            message: 'Nouveau patient en attente en salle ' + ['Demande', 'RDV', 'Consultation'][Math.floor(Math.random() * 3)],
+            urgent: emergencyMode
           });
           
           // Recharger les notifications
@@ -113,12 +103,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ emergenc
 
   const markAsRead = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/api/v1/notifications/${id}/read`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-        }
-      });
+      await apiService.put(`/notifications/${id}/read`);
       
       // Mettre à jour l'état local
       setNotifications(prev => 
