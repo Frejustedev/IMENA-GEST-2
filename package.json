@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "start": "node backend-simple.cjs",
-    "build": "npx vite build",
+    "build": "npx vite build --config vite.config.production.ts",
     "preview": "vite preview",
     "build:production": "NODE_ENV=production vite build",
     "backend": "node backend-simple.cjs",
