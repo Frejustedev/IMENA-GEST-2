@@ -2847,19 +2847,19 @@ fastify.get('/api/v1/assets', { preHandler: authenticate }, async (request, repl
   try {
     const { category, status, location } = request.query;
     
-    let whereConditions = ['active = TRUE'];
+    let whereConditions = [];
     let params = [];
 
     if (category) {
-      whereConditions.push('category = ?');
+      whereConditions.push('a.category = ?');
       params.push(category);
     }
     if (status) {
-      whereConditions.push('status = ?');
+      whereConditions.push('a.status = ?');
       params.push(status);
     }
     if (location) {
-      whereConditions.push('location LIKE ?');
+      whereConditions.push('a.location LIKE ?');
       params.push(`%${location}%`);
     }
 
