@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { apiService } from '../services/apiService';
 import { HotLabData, TracerLot, PreparationLog, RadiopharmaceuticalProduct } from '../../types';
 import { HotLabService } from '../services/hotLabService';
 import { INITIAL_HOT_LAB_DATA } from '../../constants';
@@ -85,21 +86,14 @@ export const useHotLabStore = create<HotLabState>()(
         const isotope = product?.isotope || 'Tc-99m';
         
         // Envoyer vers l'API SQLite
-        const response = await fetch('http://localhost:3001/api/v1/hotlab/tracer-lots', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          },
-          body: JSON.stringify({
-            tracerName: tracerName,
-            isotope: isotope,
-            activityMbq: lotData.initialActivity || 0,
-            calibrationTime: lotData.calibrationDateTime ? new Date(lotData.calibrationDateTime).toISOString() : new Date().toISOString(),
-            expiryTime: lotData.expiryDate ? new Date(lotData.expiryDate + 'T23:59:59').toISOString() : new Date().toISOString(),
-            supplier: 'CIS bio international',
-            batchNumber: lotData.lotNumber || 'LOT' + Date.now()
-          })
+        const response = await apiService.post('/hotlab/tracer-lots', {
+          tracerName: tracerName,
+          isotope: isotope,
+          activityMbq: lotData.initialActivity || 0,
+          calibrationTime: lotData.calibrationDateTime ? new Date(lotData.calibrationDateTime).toISOString() : new Date().toISOString(),
+          expiryTime: lotData.expiryDate ? new Date(lotData.expiryDate + 'T23:59:59').toISOString() : new Date().toISOString(),
+          supplier: 'CIS bio international',
+          batchNumber: lotData.lotNumber || 'LOT' + Date.now()
         });
 
         if (!response.ok) {
@@ -275,18 +269,10 @@ export const useHotLabStore = create<HotLabState>()(
 
       try {
         // Charger les lots de traceurs depuis SQLite
-        const tracerLotsResponse = await fetch('http://localhost:3001/api/v1/hotlab/tracer-lots', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          }
-        });
+        const tracerLotsResponse = await apiService.get('/hotlab/tracer-lots');
 
         // Charger les logs de préparation depuis SQLite
-        const preparationLogsResponse = await fetch('http://localhost:3001/api/v1/hotlab/preparation-logs', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          }
-        });
+        const preparationLogsResponse = await apiService.get('/hotlab/preparation-logs');
 
         if (tracerLotsResponse.ok && preparationLogsResponse.ok) {
           const tracerLotsData = await tracerLotsResponse.json();
