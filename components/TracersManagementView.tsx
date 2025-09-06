@@ -5,6 +5,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { BeakerIcon } from './icons/BeakerIcon';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { ClockIcon } from './icons/ClockIcon';
+import { apiService } from '../src/services/apiService';
 
 interface TracersManagementViewProps {
   hotLabData?: any;
@@ -41,11 +42,7 @@ export const TracersManagementView: React.FC<TracersManagementViewProps> = ({ ho
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/v1/hotlab/tracer-lots', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiService.get('/hotlab/tracer-lots');
 
       if (response.ok) {
         const data = await response.json();
@@ -95,12 +92,7 @@ export const TracersManagementView: React.FC<TracersManagementViewProps> = ({ ho
   const handleDelete = async (tracer: any) => {
     if (confirm(`Êtes-vous sûr de vouloir supprimer le lot ${tracer.batch_number} ?`)) {
       try {
-        const response = await fetch(`http://localhost:3001/api/v1/hotlab/tracer-lots/${tracer.lot_id || tracer.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          }
-        });
+        const response = await apiService.delete(`/hotlab/tracer-lots/${tracer.lot_id || tracer.id}`);
 
         if (response.ok) {
           loadTracers(); // Recharger la liste
@@ -295,19 +287,9 @@ export const TracersManagementView: React.FC<TracersManagementViewProps> = ({ ho
                   batchNumber: formData.batchNumber
                 };
 
-                const method = editingTracer ? 'PUT' : 'POST';
-                const url = editingTracer 
-                  ? `http://localhost:3001/api/v1/hotlab/tracer-lots/${editingTracer.lot_id || editingTracer.id}`
-                  : 'http://localhost:3001/api/v1/hotlab/tracer-lots';
-
-                const response = await fetch(url, {
-                  method,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-                  },
-                  body: JSON.stringify(lotData)
-                });
+                const response = editingTracer 
+                  ? await apiService.put(`/hotlab/tracer-lots/${editingTracer.lot_id || editingTracer.id}`, lotData)
+                  : await apiService.post('/hotlab/tracer-lots', lotData);
 
                 if (response.ok) {
                   setIsModalOpen(false);

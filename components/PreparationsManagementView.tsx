@@ -5,6 +5,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { UserIcon } from './icons/UserIcon';
+import { apiService } from '../src/services/apiService';
 
 interface PreparationsManagementViewProps {
   hotLabData?: any;
@@ -46,11 +47,7 @@ export const PreparationsManagementView: React.FC<PreparationsManagementViewProp
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/v1/hotlab/preparation-logs', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiService.get('/hotlab/preparation-logs');
 
       if (response.ok) {
         const data = await response.json();
@@ -79,11 +76,7 @@ export const PreparationsManagementView: React.FC<PreparationsManagementViewProp
       const token = localStorage.getItem('imena_access_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3001/api/v1/hotlab/tracer-lots?status=active', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiService.get('/hotlab/tracer-lots?status=active');
 
       if (response.ok) {
         const data = await response.json();
@@ -132,12 +125,7 @@ export const PreparationsManagementView: React.FC<PreparationsManagementViewProp
   const handleDelete = async (preparation: any) => {
     if (confirm(`Êtes-vous sûr de vouloir supprimer cette préparation ?`)) {
       try {
-        const response = await fetch(`http://localhost:3001/api/v1/hotlab/preparation-logs/${preparation.preparation_id || preparation.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          }
-        });
+        const response = await apiService.delete(`/hotlab/preparation-logs/${preparation.preparation_id || preparation.id}`);
 
         if (response.ok) {
           loadPreparations(); // Recharger la liste
@@ -319,14 +307,7 @@ export const PreparationsManagementView: React.FC<PreparationsManagementViewProp
               };
 
               // Appel API direct
-              fetch('http://localhost:3001/api/v1/hotlab/preparation-logs', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-                },
-                body: JSON.stringify(newPrep)
-              }).then(response => {
+              apiService.post('/hotlab/preparation-logs', newPrep).then(response => {
                 if (response.ok) {
                   setIsModalOpen(false);
                   loadPreparations();
