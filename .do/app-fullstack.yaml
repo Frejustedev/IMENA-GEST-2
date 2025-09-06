@@ -1,0 +1,49 @@
+name: imena-gest-fullstack
+services:
+# Backend API
+- name: api
+  source_dir: /
+  github:
+    repo: Frejustedev/IMENA-GEST-2
+    branch: main
+  run_command: node backend-simple.cjs
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /api
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: JWT_SECRET
+    value: imena_gest_super_secret_2024_medical_app
+  - key: DB_TYPE
+    value: postgresql
+  - key: DATABASE_URL
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+  - key: CORS_ORIGIN
+    value: ${APP_URL}
+
+# Frontend
+- name: web
+  source_dir: /
+  github:
+    repo: Frejustedev/IMENA-GEST-2
+    branch: main
+  build_command: npm run build
+  run_command: npm run preview
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /
+  envs:
+  - key: VITE_API_URL
+    value: ${api.PUBLIC_URL}/api/v1
+
+# Base de données PostgreSQL
+databases:
+- name: imena-db
+  engine: PG
+  version: "14"

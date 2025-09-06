@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "build:production": "NODE_ENV=production vite build",
     "backend": "node backend-simple.cjs",
+    "start:fullstack": "npm run build && node backend-simple.cjs",
     "deploy:vercel": "vercel --prod",
     "deploy:netlify": "netlify deploy --prod",
     "security:test": "echo 'Tests de sécurité terminés avec succès'",

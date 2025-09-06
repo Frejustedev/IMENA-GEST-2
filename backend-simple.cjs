@@ -34,10 +34,19 @@ fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (req, bo
   }
 });
 
-// Plugin pour servir les fichiers statiques (si besoin)
+// Plugin pour servir les fichiers statiques (frontend build)
 fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, 'public'),
-  prefix: '/public/',
+  root: path.join(__dirname, 'dist'),
+  prefix: '/',
+});
+
+// Servir l'index.html pour toutes les routes non-API (SPA routing)
+fastify.setNotFoundHandler((request, reply) => {
+  if (request.url.startsWith('/api/')) {
+    reply.code(404).send({ error: 'API endpoint not found' });
+  } else {
+    reply.sendFile('index.html');
+  }
 });
 
 // Base de données
