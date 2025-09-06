@@ -10,7 +10,7 @@ const fs = require('fs').promises;
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'imena-gest-secret-2024';
 const DB_PATH = process.env.DB_PATH || './database.sqlite';
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:3000';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:3000,https://web-production-21857.up.railway.app';
 
 // Plugin CORS
 fastify.register(require('@fastify/cors'), {
