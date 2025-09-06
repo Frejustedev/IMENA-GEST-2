@@ -215,7 +215,10 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={item.action}
+              onClick={() => {
+                item.action();
+                onClose();
+              }}
               className={`${baseButtonClass} ${currentView === item.viewType ? activeClass : inactiveClass}`}
               aria-current={currentView === item.viewType ? 'page' : undefined}
               title={isCollapsed ? `${item.label} (${item.shortcut})` : item.shortcut}
@@ -299,28 +302,40 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
           {isHotLabOpen && !isCollapsed && (
             <div className="ml-6 mt-2 space-y-1 border-l-2 border-slate-600 pl-4">
               <button
-                onClick={onShowHotLab}
+                onClick={() => {
+                  onShowHotLab();
+                  onClose();
+                }}
                 className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'hot_lab' ? activeClass : inactiveClass}`}
               >
                 <ChartBarIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'hot_lab' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Tableau de Bord</span>
               </button>
               <button
-                onClick={onShowIsotopesManagement}
+                onClick={() => {
+                  onShowIsotopesManagement();
+                  onClose();
+                }}
                 className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'isotopes_management' ? activeClass : inactiveClass}`}
               >
                 <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'isotopes_management' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Gestion Isotopes</span>
               </button>
               <button
-                onClick={onShowTracersManagement}
+                onClick={() => {
+                  onShowTracersManagement();
+                  onClose();
+                }}
                 className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'tracers_management' ? activeClass : inactiveClass}`}
               >
                 <BeakerIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'tracers_management' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Gestion des Traceurs</span>
               </button>
               <button
-                onClick={onShowPreparationsManagement}
+                onClick={() => {
+                  onShowPreparationsManagement();
+                  onClose();
+                }}
                 className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'preparations_management' ? activeClass : inactiveClass}`}
               >
                 <ClipboardListIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'preparations_management' ? activeIconClass : inactiveIconClass}`} />
@@ -347,28 +362,40 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
           {isPatrimonyOpen && !isCollapsed && (
             <div className="ml-6 mt-2 space-y-1 border-l-2 border-slate-600 pl-4">
               <button
-                onClick={onShowPatrimonyDashboard}
+                onClick={() => {
+                  onShowPatrimonyDashboard();
+                  onClose();
+                }}
                 className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'patrimony_dashboard' ? activeClass : inactiveClass}`}
               >
                 <ChartBarIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'patrimony_dashboard' ? activeIconClass : inactiveIconClass}`} />
                     <span className="truncate text-sm">Tableau de bord</span>
                 </button>
                 <button
-                    onClick={onShowPatrimonyInventory}
+                    onClick={() => {
+                      onShowPatrimonyInventory();
+                      onClose();
+                    }}
                     className={`${baseButtonClass} ${currentView === 'patrimony_inventory' ? activeClass : inactiveClass}`}
                 >
                     <ArchiveBoxIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'patrimony_inventory' ? activeIconClass : inactiveIconClass}`} />
                     <span className="truncate text-sm">Inventaire</span>
                 </button>
                 <button
-                    onClick={onShowPatrimonyStock}
+                    onClick={() => {
+                      onShowPatrimonyStock();
+                      onClose();
+                    }}
                     className={`${baseButtonClass} ${currentView === 'patrimony_stock' || currentView === 'patrimony_stock_detail' ? activeClass : inactiveClass}`}
                 >
                     <CubeIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'patrimony_stock' || currentView === 'patrimony_stock_detail' ? activeIconClass : inactiveIconClass}`} />
                     <span className="truncate text-sm">Stock</span>
                 </button>
                  <button
-                    onClick={onShowPatrimonyAssetStatus}
+                    onClick={() => {
+                      onShowPatrimonyAssetStatus();
+                      onClose();
+                    }}
                     className={`${baseButtonClass} ${currentView === 'patrimony_asset_status' ? activeClass : inactiveClass}`}
                 >
                     <ClipboardDocumentListIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'patrimony_asset_status' ? activeIconClass : inactiveIconClass}`} />
@@ -383,7 +410,10 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
             <h3 className="text-md font-semibold text-slate-100 mb-2">Configuration</h3>
             
             <button
-                onClick={onShowExamSettingsView}
+                onClick={() => {
+                  onShowExamSettingsView();
+                  onClose();
+                }}
                 className={`${baseButtonClass} ${currentView === 'exam_settings' ? activeClass : inactiveClass}`}
                 aria-current={currentView === 'exam_settings' ? 'page' : undefined}
             >
@@ -392,7 +422,10 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
             </button>
             
             <button
-                onClick={onShowReportTemplatesSettingsView}
+                onClick={() => {
+                  onShowReportTemplatesSettingsView();
+                  onClose();
+                }}
                 className={`${baseButtonClass} ${currentView === 'report_templates_settings' ? activeClass : inactiveClass}`}
                 aria-current={currentView === 'report_templates_settings' ? 'page' : undefined}
             >
@@ -401,7 +434,10 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
             </button>
 
             <button
-                onClick={onShowAdministrationView}
+                onClick={() => {
+                  onShowAdministrationView();
+                  onClose();
+                }}
                 className={`${baseButtonClass} ${currentView === 'administration' ? activeClass : inactiveClass}`}
                 aria-current={currentView === 'administration' ? 'page' : undefined}
             >

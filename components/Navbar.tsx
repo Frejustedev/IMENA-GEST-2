@@ -82,11 +82,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="lg:hidden p-3 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label={isNavigationOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               aria-expanded={isNavigationOpen}
+              style={{ color: 'white' }}
             >
               {isNavigationOpen ? (
-                <XMarkIcon className="h-6 w-6 text-white" />
+                <XMarkIcon className="h-6 w-6 text-white stroke-white" style={{ color: 'white', stroke: 'white' }} />
               ) : (
-                <Bars3Icon className="h-6 w-6 text-white" />
+                <Bars3Icon className="h-6 w-6 text-white stroke-white" style={{ color: 'white', stroke: 'white' }} />
               )}
             </button>
 
