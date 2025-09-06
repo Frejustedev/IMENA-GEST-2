@@ -4,6 +4,7 @@ import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { BeakerIcon } from './icons/BeakerIcon';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
+import { apiService } from '../src/services/apiService';
 
 interface Isotope {
   id?: number;
@@ -55,11 +56,7 @@ export const IsotopesManagementView: React.FC<IsotopesManagementViewProps> = ({ 
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/v1/isotopes', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiService.get('/isotopes');
 
       if (response.ok) {
         const data = await response.json();
@@ -127,29 +124,21 @@ export const IsotopesManagementView: React.FC<IsotopesManagementViewProps> = ({ 
     e.preventDefault();
     
     try {
-      const method = editingIsotope ? 'PUT' : 'POST';
-      const url = editingIsotope 
-        ? `http://localhost:3001/api/v1/isotopes/${editingIsotope.isotope_id || editingIsotope.id}`
-        : 'http://localhost:3001/api/v1/isotopes';
+      const isotopeData = {
+        symbol: formData.symbol,
+        name: formData.name,
+        halfLifeHours: formData.half_life_hours,
+        decayConstant: formData.decay_constant,
+        energyKeV: formData.energy_kev,
+        doseRateFactor: formData.dose_rate_factor,
+        usageType: formData.usage_type,
+        safetyClass: formData.safety_class,
+        regulatoryNotes: formData.regulatory_notes
+      };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-        },
-        body: JSON.stringify({
-          symbol: formData.symbol,
-          name: formData.name,
-          halfLifeHours: formData.half_life_hours,
-          decayConstant: formData.decay_constant,
-          energyKeV: formData.energy_kev,
-          doseRateFactor: formData.dose_rate_factor,
-          usageType: formData.usage_type,
-          safetyClass: formData.safety_class,
-          regulatoryNotes: formData.regulatory_notes
-        })
-      });
+      const response = editingIsotope 
+        ? await apiService.put(`/isotopes/${editingIsotope.isotope_id || editingIsotope.id}`, isotopeData)
+        : await apiService.post('/isotopes', isotopeData);
 
       if (response.ok) {
         const data = await response.json();
@@ -169,12 +158,7 @@ export const IsotopesManagementView: React.FC<IsotopesManagementViewProps> = ({ 
   const handleDelete = async (isotope: Isotope) => {
     if (confirm(`Êtes-vous sûr de vouloir supprimer l'isotope ${isotope.symbol} ?`)) {
       try {
-        const response = await fetch(`http://localhost:3001/api/v1/isotopes/${isotope.isotope_id || isotope.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          }
-        });
+        const response = await apiService.delete(`/isotopes/${isotope.isotope_id || isotope.id}`);
 
         if (response.ok) {
           loadIsotopes(); // Recharger la liste

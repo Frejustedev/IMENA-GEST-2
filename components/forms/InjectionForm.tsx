@@ -1,6 +1,7 @@
 import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { Patient } from '../../types';
 import { BeakerIcon } from '../icons/BeakerIcon';
+import { apiService } from '../../src/services/apiService';
 
 // This will contain the fields for the injection details. It will be a union of all possible fields.
 type InjectionDetails = {
@@ -37,11 +38,7 @@ export const InjectionForm: React.FC<InjectionFormProps> = ({
 
       console.log(`🔍 Recherche préparations pour patient: ${patient.id}`);
       
-      const response = await fetch(`http://localhost:3001/api/v1/hotlab/preparation-logs?patientId=${patient.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiService.get(`/hotlab/preparation-logs?patientId=${patient.id}`);
 
       console.log(`📡 Réponse API: ${response.status}`);
 
@@ -117,17 +114,10 @@ export const InjectionForm: React.FC<InjectionFormProps> = ({
     // Mettre à jour le statut de la préparation à "injecté"
     if (selectedPreparation) {
       try {
-        await fetch(`http://localhost:3001/api/v1/hotlab/preparation-logs/${selectedPreparation.preparation_id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('imena_access_token')}`
-          },
-          body: JSON.stringify({
-            status: 'injected',
-            injectionTime: formData.injectionTime,
-            injectedBy: formData.technician
-          })
+        await apiService.put(`/hotlab/preparation-logs/${selectedPreparation.preparation_id}`, {
+          status: 'injected',
+          injectionTime: formData.injectionTime,
+          injectedBy: formData.technician
         });
       } catch (error) {
         console.error('Erreur mise à jour statut préparation:', error);
