@@ -4,21 +4,15 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://imena-gest-backend.up.railway.app; frame-ancestors 'self';"
-
 [context.production.environment]
-  VITE_API_URL = "https://imena-gest-backend.up.railway.app/api/v1"
+  VITE_API_URL = "https://web-production-fa225.up.railway.app/api/v1"
+
+[context.deploy-preview.environment]
+  VITE_API_URL = "https://web-production-fa225.up.railway.app/api/v1"
