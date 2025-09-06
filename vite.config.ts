@@ -21,15 +21,7 @@ export default defineConfig(({ mode }) => {
       // Optimisations de build
       build: {
         target: 'es2015',
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: !isDev,
-            drop_debugger: !isDev,
-            pure_funcs: !isDev ? ['console.log', 'console.info'] : []
-          }
-        },
-        sourcemap: isDev,
+        minify: false, // Désactiver la minification qui casse React
         rollupOptions: {
           output: {
             manualChunks(id) {
