@@ -40,6 +40,18 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   const [selectedLotForAnalysis, setSelectedLotForAnalysis] = useState<string | null>(null);
   const [qualityControls, setQualityControls] = useState<QualityControl[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // États pour la programmation CQ
+  const [scheduledQC, setScheduledQC] = useState<Array<{
+    id: string;
+    lotId: string;
+    testType: string;
+    scheduledTime: Date;
+    status: 'pending' | 'completed' | 'overdue';
+    priority: 'low' | 'medium' | 'high' | 'critical';
+  }>>([]);
+  const [showQCScheduler, setShowQCScheduler] = useState(false);
+  const [selectedLotForScheduling, setSelectedLotForScheduling] = useState<string | null>(null);
 
   // Fonction utilitaire pour créer des notifications
   const showNotification = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration: number = 5000) => {
@@ -356,6 +368,102 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
     setQualityControls(prev => [...prev, qc]);
   };
 
+  // Fonction pour programmer un contrôle qualité
+  const handleScheduleQC = (lotId: string, testType: string, scheduledTime: Date, priority: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+    const newScheduledQC = {
+      id: `scheduled_qc_${Date.now()}`,
+      lotId,
+      testType,
+      scheduledTime,
+      status: 'pending' as const,
+      priority
+    };
+    
+    setScheduledQC(prev => [...prev, newScheduledQC]);
+    
+    showNotification(
+      'Contrôle Qualité Programmé',
+      `Test ${testType} programmé pour le ${scheduledTime.toLocaleDateString()} à ${scheduledTime.toLocaleTimeString()}`,
+      'success'
+    );
+  };
+
+  // Fonction pour programmer automatiquement les CQ selon les protocoles
+  const handleAutoScheduleQC = (lotId: string) => {
+    const lot = hotLabData.lots.find(l => l.id === lotId);
+    if (!lot) return;
+
+    const now = new Date();
+    const protocols = [
+      {
+        testType: 'Pureté Radiochimique',
+        delay: 0, // Immédiat
+        priority: 'high' as const
+      },
+      {
+        testType: 'pH',
+        delay: 30, // 30 minutes
+        priority: 'medium' as const
+      },
+      {
+        testType: 'Stérilité',
+        delay: 60, // 1 heure
+        priority: 'high' as const
+      },
+      {
+        testType: 'Pureté Radionuclidique',
+        delay: 120, // 2 heures
+        priority: 'medium' as const
+      }
+    ];
+
+    protocols.forEach(protocol => {
+      const scheduledTime = new Date(now.getTime() + protocol.delay * 60 * 1000);
+      handleScheduleQC(lotId, protocol.testType, scheduledTime, protocol.priority);
+    });
+
+    showNotification(
+      'Protocole CQ Activé',
+      `4 contrôles qualité programmés automatiquement pour le lot ${lot.lotNumber}`,
+      'success',
+      8000
+    );
+  };
+
+  // Fonction pour exécuter un CQ programmé
+  const handleExecuteScheduledQC = (scheduledQCId: string) => {
+    const scheduledTest = scheduledQC.find(qc => qc.id === scheduledQCId);
+    if (!scheduledTest) return;
+
+    const lot = hotLabData.lots.find(l => l.id === scheduledTest.lotId);
+    if (!lot) return;
+
+    // Simuler l'exécution du test
+    const testResults = {
+      'Pureté Radiochimique': () => (95 + Math.random() * 4).toFixed(1) + '%',
+      'pH': () => (6.0 + (Math.random() - 0.5) * 1.0).toFixed(1),
+      'Stérilité': () => Math.random() > 0.95 ? '1 CFU/ml' : '0 CFU/ml',
+      'Pureté Radionuclidique': () => (99 + Math.random() * 0.9).toFixed(2) + '%'
+    };
+
+    const result = testResults[scheduledTest.testType as keyof typeof testResults]?.() || 'N/A';
+    const isConform = !result.includes('1 CFU/ml') && !result.startsWith('94');
+
+    // Marquer comme complété
+    setScheduledQC(prev => prev.map(qc => 
+      qc.id === scheduledQCId 
+        ? { ...qc, status: 'completed' as const }
+        : qc
+    ));
+
+    showNotification(
+      `CQ ${scheduledTest.testType} Exécuté`,
+      `Lot ${lot.lotNumber}\nRésultat: ${result}\nStatut: ${isConform ? '✅ Conforme' : '❌ Non conforme'}`,
+      isConform ? 'success' : 'error',
+      10000
+    );
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent': return 'text-green-600 bg-green-50';
@@ -575,6 +683,101 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
                     >
                       CQ Rapide
                     </button>
+                  </div>
+                  
+                  {/* Actions de programmation CQ */}
+                  <div className="mt-2 flex space-x-2">
+                    <button
+                      onClick={() => handleAutoScheduleQC(lot.id)}
+                      className="flex-1 text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                    >
+                      📅 Programmer CQ
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedLotForScheduling(lot.id);
+                        setShowQCScheduler(true);
+                      }}
+                      className="flex-1 text-xs px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                    >
+                      ⚙️ CQ Personnalisé
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Section Contrôles Qualité Programmés */}
+      {scheduledQC.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+              <ClockIcon className="h-5 w-5 mr-2 text-purple-600" />
+              Contrôles Qualité Programmés ({scheduledQC.length})
+            </h3>
+          </div>
+          
+          <div className="space-y-3">
+            {scheduledQC.map(qc => {
+              const lot = hotLabData.lots.find(l => l.id === qc.lotId);
+              const isOverdue = qc.status === 'pending' && new Date() > qc.scheduledTime;
+              const priorityColors = {
+                low: 'bg-gray-100 text-gray-700',
+                medium: 'bg-blue-100 text-blue-700',
+                high: 'bg-orange-100 text-orange-700',
+                critical: 'bg-red-100 text-red-700'
+              };
+              
+              return (
+                <div key={qc.id} className={`p-4 rounded-lg border-l-4 ${
+                  qc.status === 'completed' ? 'border-green-500 bg-green-50' :
+                  isOverdue ? 'border-red-500 bg-red-50' :
+                  'border-purple-500 bg-purple-50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[qc.priority]}`}>
+                          {qc.priority.toUpperCase()}
+                        </span>
+                        <span className="font-medium text-slate-800">
+                          {qc.testType} - Lot {lot?.lotNumber || 'N/A'}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          qc.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          isOverdue ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {qc.status === 'completed' ? '✅ Terminé' :
+                           isOverdue ? '⚠️ En retard' :
+                           '⏳ En attente'}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-sm text-slate-600">
+                        📅 Programmé pour: {qc.scheduledTime.toLocaleDateString()} à {qc.scheduledTime.toLocaleTimeString()}
+                        {isOverdue && (
+                          <span className="ml-2 text-red-600 font-medium">
+                            (Retard: {Math.round((new Date().getTime() - qc.scheduledTime.getTime()) / (1000 * 60))} min)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {qc.status === 'pending' && (
+                      <button
+                        onClick={() => handleExecuteScheduledQC(qc.id)}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isOverdue 
+                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                        }`}
+                      >
+                        {isOverdue ? '🚨 Exécuter Maintenant' : '▶️ Exécuter'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
