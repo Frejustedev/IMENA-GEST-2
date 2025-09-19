@@ -10,6 +10,7 @@ import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { BeakerIcon } from './icons/BeakerIcon';
+import { QualityControlPanel } from './QualityControlPanel';
 
 interface HotLabViewProps {
   hotLabData: HotLabData;
@@ -40,6 +41,7 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   const [selectedLotForAnalysis, setSelectedLotForAnalysis] = useState<string | null>(null);
   const [qualityControls, setQualityControls] = useState<QualityControl[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedLotForQC, setSelectedLotForQC] = useState<string | null>(null);
 
   // Rafraîchissement automatique toutes les minutes pour décroissance
   useEffect(() => {
@@ -244,6 +246,10 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   // Handlers pour contrôle qualité
   const handleQualityControl = (lotId: string, testType: QualityControl['testType'], result: number, unit: string) => {
     const qc = RadioprotectionService.performQualityControl(lotId, testType, result, unit, 'Technicien Hot Lab');
+    setQualityControls(prev => [...prev, qc]);
+  };
+
+  const handleQualityControlAdded = (qc: QualityControl) => {
     setQualityControls(prev => [...prev, qc]);
   };
 
@@ -466,6 +472,12 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
                     >
                       CQ Rapide
                     </button>
+                    <button
+                      onClick={() => setSelectedLotForQC(lot.id)}
+                      className="flex-1 text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
+                    >
+                      CQ Complet
+                    </button>
                   </div>
                 </div>
               );
@@ -651,6 +663,43 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
            )}
         </div>
       </div>
+
+      {/* Panneau de Contrôle Qualité */}
+      {selectedLotForQC && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                <BeakerIcon className="h-6 w-6 text-indigo-500 mr-2" />
+                Contrôle Qualité Complet
+              </h3>
+              <button
+                onClick={() => setSelectedLotForQC(null)}
+                className="text-slate-400 hover:text-slate-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              {(() => {
+                const selectedLot = hotLabData.lots.find(l => l.id === selectedLotForQC);
+                if (!selectedLot) return <p>Lot non trouvé</p>;
+                
+                const existingQCs = qualityControls.filter(qc => qc.lotId === selectedLotForQC);
+                
+                return (
+                  <QualityControlPanel
+                    lotId={selectedLotForQC}
+                    lotNumber={selectedLot.lotNumber}
+                    onQualityControlAdded={handleQualityControlAdded}
+                    existingControls={existingQCs}
+                  />
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
