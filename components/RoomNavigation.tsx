@@ -317,6 +317,16 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
               </button>
               <button
                 onClick={() => {
+                  onShowRadioprotection();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection' ? activeClass : inactiveClass}`}
+              >
+                <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Radioprotection</span>
+              </button>
+              <button
+                onClick={() => {
                   onShowIsotopesManagement();
                   onClose();
                 }}
@@ -344,16 +354,6 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
               >
                 <ClipboardListIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'preparations_management' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Gestion des Préparations</span>
-              </button>
-              <button
-                onClick={() => {
-                  onShowRadioprotection();
-                  onClose();
-                }}
-                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection' ? activeClass : inactiveClass}`}
-              >
-                <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection' ? activeIconClass : inactiveIconClass}`} />
-                <span className="truncate text-sm">Radioprotection</span>
               </button>
             </div>
           )}
