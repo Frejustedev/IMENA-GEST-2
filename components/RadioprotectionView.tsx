@@ -92,13 +92,17 @@ export const RadioprotectionView: React.FC<RadioprotectionViewProps> = () => {
   // Calcul de décroissance en temps réel
   useEffect(() => {
     if (selectedIsotope && currentActivity > 0) {
-      const calculation = RadioprotectionService.calculateDecay(
-        selectedIsotope,
-        currentActivity,
-        new Date().toISOString(),
-        24 // 24 heures
-      );
-      setDecayCalculation(calculation);
+      try {
+        const calculation = RadioprotectionService.calculateDecay(
+          selectedIsotope,
+          currentActivity,
+          24 // 24 heures
+        );
+        setDecayCalculation(calculation);
+      } catch (error) {
+        console.error('Erreur calcul décroissance:', error);
+        setDecayCalculation(null);
+      }
     }
   }, [selectedIsotope, currentActivity]);
 
@@ -163,18 +167,18 @@ export const RadioprotectionView: React.FC<RadioprotectionViewProps> = () => {
             <div className="w-full">
               <label className="block text-sm font-medium text-slate-700 mb-2">Activité après 24h</label>
               <div className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium">
-                {decayCalculation ? `${decayCalculation.remainingActivity.toFixed(1)} MBq` : '0 MBq'}
+                {decayCalculation && decayCalculation.currentActivity !== undefined ? `${decayCalculation.currentActivity.toFixed(1)} MBq` : '0 MBq'}
               </div>
             </div>
           </div>
         </div>
 
-        {decayCalculation && (
+        {decayCalculation && decayCalculation.decayFactor !== undefined && decayCalculation.currentActivity !== undefined && decayCalculation.originalActivity !== undefined && (
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>Facteur de décroissance:</strong> {decayCalculation.decayFactor.toFixed(4)} | 
-              <strong> Temps de demi-vie:</strong> {decayCalculation.halfLife.toFixed(2)}h |
-              <strong> Pourcentage restant:</strong> {((decayCalculation.remainingActivity / decayCalculation.originalActivity) * 100).toFixed(1)}%
+              <strong> Temps écoulé:</strong> {decayCalculation.timeElapsed}h |
+              <strong> Pourcentage restant:</strong> {decayCalculation.percentRemaining.toFixed(1)}%
             </p>
           </div>
         )}
