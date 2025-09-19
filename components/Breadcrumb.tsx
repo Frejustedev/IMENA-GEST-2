@@ -72,6 +72,34 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
         });
         break;
 
+      case 'tracers_management':
+        items.push({
+          label: 'Gestion des Traceurs',
+          isActive: true
+        });
+        break;
+
+      case 'preparations_management':
+        items.push({
+          label: 'Gestion des Préparations',
+          isActive: true
+        });
+        break;
+
+      case 'isotopes_management':
+        items.push({
+          label: 'Gestion des Isotopes',
+          isActive: true
+        });
+        break;
+
+      case 'radioprotection':
+        items.push({
+          label: 'Radioprotection',
+          isActive: true
+        });
+        break;
+
       case 'administration':
         items.push({
           label: 'Administration',

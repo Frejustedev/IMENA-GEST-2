@@ -28,6 +28,7 @@ const HotLabView = lazy(() => import('./components/HotLabView').then(module => (
 const TracersManagementView = lazy(() => import('./components/TracersManagementView').then(module => ({ default: module.TracersManagementView })));
 const PreparationsManagementView = lazy(() => import('./components/PreparationsManagementView').then(module => ({ default: module.PreparationsManagementView })));
 const IsotopesManagementView = lazy(() => import('./components/IsotopesManagementView').then(module => ({ default: module.IsotopesManagementView })));
+const RadioprotectionView = lazy(() => import('./components/RadioprotectionView').then(module => ({ default: module.RadioprotectionView })));
 const AdministrationView = lazy(() => import('./components/AdministrationView').then(module => ({ default: module.AdministrationView })));
 const ExamSettingsView = lazy(() => import('./components/ExamSettingsView').then(module => ({ default: module.ExamSettingsView })));
 const DatabaseView = lazy(() => import('./components/DatabaseView').then(module => ({ default: module.DatabaseView })));
@@ -777,9 +778,11 @@ function App() {
     onShowTracersManagement: () => navigateToView('tracers_management'),
     onShowPreparationsManagement: () => navigateToView('preparations_management'),
     onShowIsotopesManagement: () => navigateToView('isotopes_management'),
+    onShowRadioprotection: () => navigateToView('radioprotection'),
     onShowPatrimonyDashboard: () => navigateToView('patrimony_dashboard'),
     onShowPatrimonyInventory: () => navigateToView('patrimony_inventory'),
     onShowPatrimonyStock: () => navigateToView('patrimony_stock'),
+    onShowPatrimonyStockDetail: () => navigateToView('patrimony_stock_detail'),
     onShowPatrimonyAssetStatus: () => navigateToView('patrimony_asset_status')
   };
 
@@ -863,6 +866,9 @@ function App() {
           onSave={handleSaveIsotope}
           onDelete={handleDeleteIsotope}
         />
+      ),
+      radioprotection: () => (
+        <RadioprotectionView />
       ),
       administration: () => (
         <AdministrationView

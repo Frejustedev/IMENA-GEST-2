@@ -74,7 +74,7 @@ export interface ReferringEntity {
 
 export type PeriodOption = 'today' | 'thisWeek' | 'thisMonth';
 
-export type ActiveView = 'room' | 'search' | 'daily_worklist' | 'patient_detail' | 'rooms_overview' | 'activity_feed' | 'statistics' | 'hot_lab' | 'tracers_management' | 'preparations_management' | 'isotopes_management' | 'administration' | 'exam_settings' | 'database' | 'report_templates_settings' | 'patrimony_dashboard' | 'patrimony_inventory' | 'patrimony_stock' | 'patrimony_stock_detail' | 'patrimony_asset_status';
+export type ActiveView = 'room' | 'search' | 'daily_worklist' | 'patient_detail' | 'rooms_overview' | 'activity_feed' | 'statistics' | 'hot_lab' | 'tracers_management' | 'preparations_management' | 'isotopes_management' | 'radioprotection' | 'administration' | 'exam_settings' | 'database' | 'report_templates_settings' | 'patrimony_dashboard' | 'patrimony_inventory' | 'patrimony_stock' | 'patrimony_stock_detail' | 'patrimony_asset_status';
 
 export type PaymentMethod = 'nonAssure' | 'assure' | 'priseEnCharge' | 'autres';
 

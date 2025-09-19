@@ -37,9 +37,11 @@ interface RoomNavigationProps {
   onShowTracersManagement: () => void;
   onShowPreparationsManagement: () => void;
   onShowIsotopesManagement: () => void;
+  onShowRadioprotection: () => void;
   onShowPatrimonyDashboard: () => void;
   onShowPatrimonyInventory: () => void;
   onShowPatrimonyStock: () => void;
+  onShowPatrimonyStockDetail: () => void;
   onShowPatrimonyAssetStatus: () => void;
   isOpen: boolean;
   onClose: () => void;
@@ -63,9 +65,11 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
   onShowTracersManagement,
   onShowPreparationsManagement,
   onShowIsotopesManagement,
+  onShowRadioprotection,
   onShowPatrimonyDashboard,
   onShowPatrimonyInventory,
   onShowPatrimonyStock,
+  onShowPatrimonyStockDetail,
   onShowPatrimonyAssetStatus,
   isOpen,
   onClose,
@@ -340,6 +344,16 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
               >
                 <ClipboardListIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'preparations_management' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Gestion des Préparations</span>
+              </button>
+              <button
+                onClick={() => {
+                  onShowRadioprotection();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection' ? activeClass : inactiveClass}`}
+              >
+                <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Radioprotection</span>
               </button>
             </div>
           )}
