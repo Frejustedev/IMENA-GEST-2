@@ -52,6 +52,11 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   }>>([]);
   const [showQCScheduler, setShowQCScheduler] = useState(false);
   const [selectedLotForScheduling, setSelectedLotForScheduling] = useState<string | null>(null);
+  
+  // États pour le blocage de lots
+  const [blockedLots, setBlockedLots] = useState<Set<string>>(new Set());
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [selectedLotForBlocking, setSelectedLotForBlocking] = useState<string | null>(null);
 
   // Fonction utilitaire pour créer des notifications
   const showNotification = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration: number = 5000) => {
@@ -464,6 +469,78 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
     );
   };
 
+  // Fonctions de blocage de lots
+  const handleBlockLot = (lotId: string, blockType: 'quarantine' | 'quality_failure' | 'expired' | 'contamination' | 'manual', reason: string) => {
+    const lot = hotLabData.lots.find(l => l.id === lotId);
+    if (!lot) return;
+
+    setBlockedLots(prev => new Set([...prev, lotId]));
+    
+    const blockTypeLabels = {
+      quarantine: '🔒 Quarantaine',
+      quality_failure: '❌ Échec CQ',
+      expired: '⏰ Expiré',
+      contamination: '☢️ Contamination',
+      manual: '🚫 Blocage Manuel'
+    };
+
+    showNotification(
+      'Lot Bloqué',
+      `${blockTypeLabels[blockType]}\nLot ${lot.lotNumber}\nRaison: ${reason}\n\n⚠️ UTILISATION INTERDITE`,
+      'error',
+      10000
+    );
+
+    console.log('Lot bloqué:', {
+      lotId,
+      lotNumber: lot.lotNumber,
+      blockType,
+      reason,
+      blockedBy: 'Technicien Hot Lab',
+      blockedAt: new Date().toISOString()
+    });
+  };
+
+  const handleUnblockLot = (lotId: string, reason: string) => {
+    const lot = hotLabData.lots.find(l => l.id === lotId);
+    if (!lot) return;
+
+    setBlockedLots(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(lotId);
+      return newSet;
+    });
+
+    showNotification(
+      'Lot Débloqué',
+      `✅ Lot ${lot.lotNumber} débloqué\nRaison: ${reason}\n\nUtilisation autorisée`,
+      'success',
+      8000
+    );
+
+    console.log('Lot débloqué:', {
+      lotId,
+      lotNumber: lot.lotNumber,
+      reason,
+      unblockedBy: 'Technicien Hot Lab',
+      unblockedAt: new Date().toISOString()
+    });
+  };
+
+  const handleQuickBlock = (lotId: string, blockType: 'quarantine' | 'quality_failure' | 'expired' | 'contamination' | 'manual') => {
+    const reasons = {
+      quarantine: 'Lot en quarantaine préventive - En attente de validation',
+      quality_failure: 'Échec des contrôles qualité - Non conforme aux spécifications',
+      expired: 'Lot expiré - Activité insuffisante pour utilisation',
+      contamination: 'Suspicion de contamination - Mesures de sécurité activées',
+      manual: 'Blocage manuel par le technicien - Vérifications nécessaires'
+    };
+
+    handleBlockLot(lotId, blockType, reasons[blockType]);
+  };
+
+  const isLotBlocked = (lotId: string) => blockedLots.has(lotId);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent': return 'text-green-600 bg-green-50';
@@ -595,22 +672,41 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
             {hotLabData.lots.map(lot => {
               const analytics = lotAnalytics[lot.id];
               const product = hotLabData.products.find(p => p.id === lot.productId);
+              const blocked = isLotBlocked(lot.id);
               
               if (!analytics) return null;
 
               return (
-                <div key={lot.id} className={`p-4 rounded-lg border-2 ${getStatusColor(analytics.status)}`}>
+                <div key={lot.id} className={`p-4 rounded-lg border-2 ${
+                  blocked 
+                    ? 'border-red-500 bg-red-50' 
+                    : getStatusColor(analytics.status)
+                }`}>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-slate-800 truncate">
+                    <h4 className={`font-semibold truncate ${blocked ? 'text-red-800' : 'text-slate-800'}`}>
                       {lot.lotNumber}
+                      {blocked && <span className="ml-2 text-red-600 text-xs">🚫 BLOQUÉ</span>}
                     </h4>
                     <div className="flex items-center space-x-1">
-                      {getStatusIcon(analytics.status)}
-                      <span className="text-xs font-medium uppercase">
-                        {analytics.status}
+                      {blocked ? (
+                        <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />
+                      ) : (
+                        getStatusIcon(analytics.status)
+                      )}
+                      <span className={`text-xs font-medium uppercase ${blocked ? 'text-red-700' : ''}`}>
+                        {blocked ? 'BLOQUÉ' : analytics.status}
                       </span>
                     </div>
                   </div>
+                  
+                  {blocked && (
+                    <div className="mb-3 p-2 bg-red-100 border border-red-300 rounded">
+                      <div className="flex items-center space-x-1">
+                        <ExclamationTriangleIcon className="h-3 w-3 text-red-600" />
+                        <span className="text-xs font-medium text-red-800">UTILISATION INTERDITE</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -690,6 +786,7 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
                     <button
                       onClick={() => handleAutoScheduleQC(lot.id)}
                       className="flex-1 text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                      disabled={isLotBlocked(lot.id)}
                     >
                       📅 Programmer CQ
                     </button>
@@ -699,9 +796,37 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
                         setShowQCScheduler(true);
                       }}
                       className="flex-1 text-xs px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                      disabled={isLotBlocked(lot.id)}
                     >
                       ⚙️ CQ Personnalisé
                     </button>
+                  </div>
+                  
+                  {/* Actions de blocage */}
+                  <div className="mt-2 flex space-x-2">
+                    {!isLotBlocked(lot.id) ? (
+                      <>
+                        <button
+                          onClick={() => handleQuickBlock(lot.id, 'quarantine')}
+                          className="flex-1 text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors"
+                        >
+                          🔒 Quarantaine
+                        </button>
+                        <button
+                          onClick={() => handleQuickBlock(lot.id, 'manual')}
+                          className="flex-1 text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        >
+                          🚫 Bloquer
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleUnblockLot(lot.id, 'Validation manuelle - Lot vérifié conforme')}
+                        className="w-full text-xs px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                      >
+                        ✅ Débloquer
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -778,6 +903,54 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
                         {isOverdue ? '🚨 Exécuter Maintenant' : '▶️ Exécuter'}
                       </button>
                     )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Section Lots Bloqués */}
+      {blockedLots.size > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-red-800 flex items-center">
+              <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-red-600" />
+              Lots Bloqués ({blockedLots.size})
+            </h3>
+          </div>
+          
+          <div className="space-y-3">
+            {Array.from(blockedLots).map(lotId => {
+              const lot = hotLabData.lots.find(l => l.id === lotId);
+              if (!lot) return null;
+              
+              return (
+                <div key={lotId} className="p-4 bg-white border border-red-300 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <CubeIcon className="h-5 w-5 text-red-600" />
+                        <div>
+                          <span className="font-medium text-red-800">Lot {lot.lotNumber}</span>
+                          <p className="text-sm text-red-600">{lot.productId}</p>
+                        </div>
+                        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                          🚫 BLOQUÉ
+                        </span>
+                      </div>
+                      <div className="mt-2 text-sm text-red-700">
+                        ⚠️ Ce lot ne peut pas être utilisé pour les préparations
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => handleUnblockLot(lotId, 'Validation manuelle - Lot vérifié conforme')}
+                      className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                    >
+                      ✅ Débloquer
+                    </button>
                   </div>
                 </div>
               );

@@ -780,6 +780,12 @@ export interface TracerLot {
   receivedDate: string;
   quantityReceived: number;
   notes?: string;
+  // Statut de blocage
+  isBlocked?: boolean;
+  blockReason?: string;
+  blockedBy?: string;
+  blockedAt?: string;
+  blockType?: 'quarantine' | 'quality_failure' | 'expired' | 'contamination' | 'manual';
 }
 
 export interface PreparationLog {
