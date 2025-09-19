@@ -6,6 +6,11 @@ import { useHotLab } from './src/hooks/useHotLab';
 import { apiService } from './src/services/apiService';
 import { useAuth } from './src/contexts/AuthContext';
 
+// Import des icônes
+import { AtomIcon } from './components/icons/AtomIcon';
+import { ExclamationTriangleIcon } from './components/icons/ExclamationTriangleIcon';
+import { BeakerIcon } from './components/icons/BeakerIcon';
+
 // Import des composants de base
 import { Navbar } from './components/Navbar';
 import { RoomNavigation } from './components/RoomNavigation';
@@ -779,6 +784,9 @@ function App() {
     onShowPreparationsManagement: () => navigateToView('preparations_management'),
     onShowIsotopesManagement: () => navigateToView('isotopes_management'),
     onShowRadioprotection: () => navigateToView('radioprotection'),
+    onShowRadioprotectionDosimetry: () => navigateToView('radioprotection_dosimetry'),
+    onShowRadioprotectionSafety: () => navigateToView('radioprotection_safety'),
+    onShowRadioprotectionWaste: () => navigateToView('radioprotection_waste'),
     onShowPatrimonyDashboard: () => navigateToView('patrimony_dashboard'),
     onShowPatrimonyInventory: () => navigateToView('patrimony_inventory'),
     onShowPatrimonyStock: () => navigateToView('patrimony_stock'),
@@ -869,6 +877,57 @@ function App() {
       ),
       radioprotection: () => (
         <RadioprotectionView />
+      ),
+      radioprotection_dosimetry: () => (
+        <div className="min-h-screen bg-slate-50 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <AtomIcon className="h-8 w-8 text-blue-600 mr-3" />
+                <h1 className="text-3xl font-bold text-slate-800">Dosimétrie</h1>
+              </div>
+              <p className="text-slate-600">Suivi dosimétrique et calculs de doses patients</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Module Dosimétrie</h3>
+              <p className="text-slate-600">Interface dédiée à la dosimétrie en cours de développement...</p>
+            </div>
+          </div>
+        </div>
+      ),
+      radioprotection_safety: () => (
+        <div className="min-h-screen bg-slate-50 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <ExclamationTriangleIcon className="h-8 w-8 text-orange-600 mr-3" />
+                <h1 className="text-3xl font-bold text-slate-800">Sécurité Radiologique</h1>
+              </div>
+              <p className="text-slate-600">Gestion des risques et protocoles de sécurité</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Module Sécurité</h3>
+              <p className="text-slate-600">Interface de sécurité radiologique en cours de développement...</p>
+            </div>
+          </div>
+        </div>
+      ),
+      radioprotection_waste: () => (
+        <div className="min-h-screen bg-slate-50 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <BeakerIcon className="h-8 w-8 text-green-600 mr-3" />
+                <h1 className="text-3xl font-bold text-slate-800">Gestion des Déchets Radioactifs</h1>
+              </div>
+              <p className="text-slate-600">Suivi et traitement des déchets radioactifs</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Module Déchets</h3>
+              <p className="text-slate-600">Interface de gestion des déchets radioactifs en cours de développement...</p>
+            </div>
+          </div>
+        </div>
       ),
       administration: () => (
         <AdministrationView

@@ -17,6 +17,7 @@ import { BeakerIcon } from './icons/BeakerIcon';
 import { AtomIcon } from './icons/AtomIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { HomeIcon } from './icons/HomeIcon';
+import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 
 
 interface RoomNavigationProps {
@@ -38,6 +39,9 @@ interface RoomNavigationProps {
   onShowPreparationsManagement: () => void;
   onShowIsotopesManagement: () => void;
   onShowRadioprotection: () => void;
+  onShowRadioprotectionDosimetry: () => void;
+  onShowRadioprotectionSafety: () => void;
+  onShowRadioprotectionWaste: () => void;
   onShowPatrimonyDashboard: () => void;
   onShowPatrimonyInventory: () => void;
   onShowPatrimonyStock: () => void;
@@ -66,6 +70,9 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
   onShowPreparationsManagement,
   onShowIsotopesManagement,
   onShowRadioprotection,
+  onShowRadioprotectionDosimetry,
+  onShowRadioprotectionSafety,
+  onShowRadioprotectionWaste,
   onShowPatrimonyDashboard,
   onShowPatrimonyInventory,
   onShowPatrimonyStock,
@@ -76,6 +83,7 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
 }) => {
   const [isPatrimonyOpen, setIsPatrimonyOpen] = useState(true);
   const [isHotLabOpen, setIsHotLabOpen] = useState(true);
+  const [isRadioprotectionOpen, setIsRadioprotectionOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Gestion raccourcis clavier
@@ -291,10 +299,10 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
           {/* Module Labo Chaud avec sous-menu */}
           <button
             onClick={() => setIsHotLabOpen(!isHotLabOpen)}
-            className={`${baseButtonClass} ${currentView === 'hot_lab' || currentView === 'isotopes_management' ? 'text-white bg-slate-600' : ''} ${inactiveClass} ${!isCollapsed ? 'justify-between' : 'justify-center'}`}
+            className={`${baseButtonClass} ${currentView === 'hot_lab' || currentView === 'isotopes_management' || currentView === 'tracers_management' || currentView === 'preparations_management' ? 'text-white bg-slate-600' : ''} ${inactiveClass} ${!isCollapsed ? 'justify-between' : 'justify-center'}`}
           >
             <div className={`flex items-center ${!isCollapsed ? 'space-x-3' : ''}`}>
-              <CubeIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'hot_lab' || currentView === 'isotopes_management' ? activeIconClass : inactiveIconClass}`} />
+              <CubeIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'hot_lab' || currentView === 'isotopes_management' || currentView === 'tracers_management' || currentView === 'preparations_management' ? activeIconClass : inactiveIconClass}`} />
               {!isCollapsed && <span className="truncate">Gestion Labo Chaud</span>}
             </div>
             {!isCollapsed && (
@@ -314,16 +322,6 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
               >
                 <ChartBarIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'hot_lab' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Tableau de Bord</span>
-              </button>
-              <button
-                onClick={() => {
-                  onShowRadioprotection();
-                  onClose();
-                }}
-                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection' ? activeClass : inactiveClass}`}
-              >
-                <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection' ? activeIconClass : inactiveIconClass}`} />
-                <span className="truncate text-sm">Radioprotection</span>
               </button>
               <button
                 onClick={() => {
@@ -354,6 +352,66 @@ export const RoomNavigation: React.FC<RoomNavigationProps> = ({
               >
                 <ClipboardListIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'preparations_management' ? activeIconClass : inactiveIconClass}`} />
                 <span className="truncate text-sm">Gestion des Préparations</span>
+              </button>
+            </div>
+          )}
+
+          {/* Module Radioprotection */}
+          <button
+            onClick={() => setIsRadioprotectionOpen(!isRadioprotectionOpen)}
+            className={`${baseButtonClass} ${currentView === 'radioprotection' || currentView === 'radioprotection_dosimetry' || currentView === 'radioprotection_safety' || currentView === 'radioprotection_waste' ? 'text-white bg-slate-600' : ''} ${inactiveClass} ${!isCollapsed ? 'justify-between' : 'justify-center'}`}
+          >
+            <div className={`flex items-center ${!isCollapsed ? 'space-x-3' : ''}`}>
+              <AtomIcon className={`h-5 w-5 flex-shrink-0 ${currentView === 'radioprotection' || currentView === 'radioprotection_dosimetry' || currentView === 'radioprotection_safety' || currentView === 'radioprotection_waste' ? activeIconClass : inactiveIconClass}`} />
+              {!isCollapsed && <span className="truncate">Radioprotection</span>}
+            </div>
+            {!isCollapsed && (
+              isRadioprotectionOpen ? <ChevronDownIcon className="h-4 w-4"/> : <ChevronRightIcon className="h-4 w-4"/>
+            )}
+          </button>
+
+          {/* Sous-menu Radioprotection */}
+          {isRadioprotectionOpen && !isCollapsed && (
+            <div className="ml-6 mt-2 space-y-1 border-l-2 border-slate-600 pl-4">
+              <button
+                onClick={() => {
+                  onShowRadioprotection();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection' ? activeClass : inactiveClass}`}
+              >
+                <ChartBarIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Tableau de Bord</span>
+              </button>
+              <button
+                onClick={() => {
+                  onShowRadioprotectionDosimetry();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection_dosimetry' ? activeClass : inactiveClass}`}
+              >
+                <AtomIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection_dosimetry' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Dosimétrie</span>
+              </button>
+              <button
+                onClick={() => {
+                  onShowRadioprotectionSafety();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection_safety' ? activeClass : inactiveClass}`}
+              >
+                <ExclamationTriangleIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection_safety' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Sécurité</span>
+              </button>
+              <button
+                onClick={() => {
+                  onShowRadioprotectionWaste();
+                  onClose();
+                }}
+                className={`w-full flex items-center space-x-3 p-2 rounded text-left transition-colors touch-manipulation ${currentView === 'radioprotection_waste' ? activeClass : inactiveClass}`}
+              >
+                <BeakerIcon className={`h-4 w-4 flex-shrink-0 ${currentView === 'radioprotection_waste' ? activeIconClass : inactiveIconClass}`} />
+                <span className="truncate text-sm">Gestion des Déchets</span>
               </button>
             </div>
           )}

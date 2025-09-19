@@ -100,6 +100,39 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
         });
         break;
 
+      case 'radioprotection_dosimetry':
+        items.push({
+          label: 'Radioprotection',
+          action: () => onNavigate('radioprotection')
+        });
+        items.push({
+          label: 'Dosimétrie',
+          isActive: true
+        });
+        break;
+
+      case 'radioprotection_safety':
+        items.push({
+          label: 'Radioprotection',
+          action: () => onNavigate('radioprotection')
+        });
+        items.push({
+          label: 'Sécurité',
+          isActive: true
+        });
+        break;
+
+      case 'radioprotection_waste':
+        items.push({
+          label: 'Radioprotection',
+          action: () => onNavigate('radioprotection')
+        });
+        items.push({
+          label: 'Gestion des Déchets',
+          isActive: true
+        });
+        break;
+
       case 'administration':
         items.push({
           label: 'Administration',
