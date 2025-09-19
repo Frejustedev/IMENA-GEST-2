@@ -41,6 +41,63 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   const [qualityControls, setQualityControls] = useState<QualityControl[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Fonction utilitaire pour créer des notifications
+  const showNotification = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration: number = 5000) => {
+    const colors = {
+      success: 'bg-green-600',
+      error: 'bg-red-600',
+      warning: 'bg-orange-600',
+      info: 'bg-blue-600'
+    };
+
+    const icons = {
+      success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+      error: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z',
+      warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z',
+      info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    };
+
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${colors[type]} text-white p-4 rounded-lg shadow-lg z-50 max-w-md transform transition-all duration-300 translate-x-full`;
+    notification.innerHTML = `
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[type]}" />
+          </svg>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-sm font-medium">${title}</h3>
+          <div class="mt-1 text-sm" style="white-space: pre-line;">${message}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animation d'entrée
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Supprimer automatiquement
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.transform = 'translateX(full)';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }
+    }, duration);
+  };
+
   // Rafraîchissement automatique toutes les minutes pour décroissance
   useEffect(() => {
     const interval = setInterval(() => {
@@ -134,7 +191,11 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   const handleAddLotSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!newLotData.productId || !newLotData.lotNumber || !newLotData.expiryDate || !newLotData.unit ) {
-        alert("Veuillez remplir tous les champs obligatoires pour le lot (Produit, N° Lot, Date Expiration, Unité).");
+        showNotification(
+          "Champs manquants", 
+          "Veuillez remplir tous les champs obligatoires pour le lot :\n• Produit\n• N° Lot\n• Date Expiration\n• Unité", 
+          'error'
+        );
         return;
     }
     onAddTracerLot(newLotData as Omit<TracerLot, 'id'>);
@@ -154,7 +215,11 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
   const handleAddPrepSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!newPrepData.tracerLotId || !newPrepData.activityPrepared || !newPrepData.preparationDateTime || !newPrepData.preparedBy) {
-        alert("Veuillez remplir tous les champs obligatoires pour la préparation (Lot, Activité, Date/Heure Prépa, Préparé par).");
+        showNotification(
+          "Champs manquants", 
+          "Veuillez remplir tous les champs obligatoires pour la préparation :\n• Lot\n• Activité\n• Date/Heure Prépa\n• Préparé par", 
+          'error'
+        );
         return;
     }
     onAddPreparationLog(newPrepData as Omit<PreparationLog, 'id'>);
@@ -179,32 +244,60 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
     switch (action) {
       case 'Éliminer selon protocole':
         if (confirm('Confirmer l\'élimination du lot selon le protocole de radioprotection ?')) {
-          alert('✅ Lot marqué pour élimination selon protocole. Procédure d\'élimination déclenchée.');
+          showNotification(
+            'Élimination programmée',
+            '✅ Lot marqué pour élimination selon protocole.\nProcédure d\'élimination déclenchée.',
+            'success'
+          );
         }
         break;
       
       case 'Renouveler commande':
-        alert('📦 Commande de renouvellement créée automatiquement. Fournisseur notifié.');
+        showNotification(
+          'Commande créée',
+          '📦 Commande de renouvellement créée automatiquement.\nFournisseur notifié.',
+          'success'
+        );
         break;
       
       case 'Vérifier activité':
-        alert('🔬 Contrôle qualité programmé. Activimètre calibré pour vérification.');
+        showNotification(
+          'Contrôle programmé',
+          '🔬 Contrôle qualité programmé.\nActivimètre calibré pour vérification.',
+          'info'
+        );
         break;
       
       case 'Alerter responsable':
-        alert('📧 Responsable radioprotection notifié par email et SMS.');
+        showNotification(
+          'Responsable alerté',
+          '📧 Responsable radioprotection notifié par email et SMS.',
+          'warning'
+        );
         break;
       
       case 'Isoler lot':
-        alert('🔒 Lot isolé dans zone de stockage sécurisée. Accès restreint.');
+        showNotification(
+          'Lot isolé',
+          '🔒 Lot isolé dans zone de stockage sécurisée.\nAccès restreint.',
+          'warning'
+        );
         break;
       
       case 'Documentation incident':
-        alert('📋 Fiche d\'incident créée automatiquement. Rapport envoyé à l\'ASN.');
+        showNotification(
+          'Incident documenté',
+          '📋 Fiche d\'incident créée automatiquement.\nRapport envoyé à l\'ASN.',
+          'info'
+        );
         break;
       
       default:
-        alert(`✅ Action "${action}" exécutée avec succès.`);
+        showNotification(
+          'Action exécutée',
+          `✅ Action "${action}" exécutée avec succès.`,
+          'success'
+        );
     }
   };
 
@@ -214,11 +307,16 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
     if (lot) {
       const analytics = lotAnalytics[lotId];
       if (analytics) {
-        alert(`🔬 ANALYSE DU LOT ${lot.lotNumber}:\n\n` +
-              `📊 Activité actuelle: ${analytics.decay.currentActivity.toFixed(1)} MBq\n` +
-              `📉 Décroissance: ${(100 - analytics.decay.percentRemaining).toFixed(1)}%\n` +
-              `⏱️ Temps restant: ${analytics.expiry.timeRemaining.toFixed(1)}h\n` +
-              `🚨 Statut: ${analytics.status.toUpperCase()}`);
+        const message = `📊 Activité: ${analytics.decay.currentActivity.toFixed(1)} MBq\n📉 Décroissance: ${(100 - analytics.decay.percentRemaining).toFixed(1)}%\n⏱️ Temps restant: ${analytics.expiry.timeRemaining.toFixed(1)}h\n🚨 Statut: ${analytics.status.toUpperCase()}`;
+        
+        showNotification(
+          `Analyse du Lot ${lot.lotNumber}`,
+          message,
+          'info',
+          8000
+        );
+        
+        console.log('Analyse du lot:', { lotId, analytics });
       }
     }
   };
@@ -229,12 +327,23 @@ export const HotLabView: React.FC<HotLabViewProps> = ({
     if (lot) {
       const purity = (95 + Math.random() * 4).toFixed(1); // Simulation 95-99%
       const pH = (6.5 + Math.random() * 1).toFixed(1); // Simulation pH 6.5-7.5
+      const isConform = parseFloat(purity) >= 95 && parseFloat(pH) >= 6.0 && parseFloat(pH) <= 8.0;
       
-      alert(`✅ CONTRÔLE QUALITÉ RAPIDE - LOT ${lot.lotNumber}:\n\n` +
-            `🧪 Pureté radiochimique: ${purity}% (>95% requis)\n` +
-            `⚗️ pH: ${pH} (6.0-8.0 acceptable)\n` +
-            `🔬 Stérilité: Conforme\n` +
-            `✅ Résultat: LOT CONFORME POUR UTILISATION`);
+      const message = `🧪 Pureté radiochimique: ${purity}% ${parseFloat(purity) >= 95 ? '✅' : '❌'}\n⚗️ pH: ${pH} ${parseFloat(pH) >= 6.0 && parseFloat(pH) <= 8.0 ? '✅' : '❌'}\n🔬 Stérilité: Conforme ✅\n\n${isConform ? '✅ LOT CONFORME POUR UTILISATION' : '❌ LOT NON CONFORME - UTILISATION INTERDITE'}`;
+      
+      showNotification(
+        `Contrôle Qualité - Lot ${lot.lotNumber}`,
+        message,
+        isConform ? 'success' : 'error',
+        10000
+      );
+      
+      console.log(`CQ Rapide - Lot ${lot.lotNumber}:`, {
+        purity: `${purity}%`,
+        pH: pH,
+        sterility: 'Conforme',
+        result: isConform ? 'CONFORME' : 'NON CONFORME'
+      });
     }
   };
 
